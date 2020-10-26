@@ -1,0 +1,48 @@
+
+/************************************************************************************************
+Text-parsing is a common task -- 
+
+PROJECT SPOTLIGHT
+Project Name:
+ADS Member(s): 
+Background: 
+
+*************************************************************************************************/
+
+
+/************************************************************************************************
+1. Parsing text before a certain character
+*************************************************************************************************/
+/* SYNTAX */
+SELECT	SUBSTRING([column_name],starting_index, CHARINDEX('character you are looking for',[column_name]))  
+FROM	  [schema].[table_name]
+
+/*EXAMPLE: Get the first name in a full name (Text before space) */
+SELECT	SUBSTRING([cust_contact],0, CHARINDEX(' ',[cust_contact])) [First Name] 
+FROM	  [dbo].[Customers]
+
+
+/************************************************************************************************
+2. Parsing text after a certain character
+*************************************************************************************************/
+
+/* SYNTAX */
+SELECT	SUBSTRING([column_name], CHARINDEX('character you are looking for', [column_name]) + 1, LEN([column_name]))
+FROM	  [schema].[table_name]
+
+/*EXAMPLE: Get the last name in a full name (Text after space) */
+SELECT	SUBSTRING([cust_contact], CHARINDEX(' ', [cust_contact]) + 1, LEN([cust_contact])) [Last Name]
+FROM	  [dbo].[Customers]
+
+/************************************************************************************************
+3. Get text between two characters
+*************************************************************************************************/
+
+/* SYNTAX */
+SELECT		SUBSTRING([column_name], CHARINDEX('character before text', [column_name])+1, CHARINDEX('character after text',[column_name]) - CHARINDEX('character before text', [cust_email]) + Len('character after text')-2)
+from	  	[schema].[table_name]
+
+/* EXAMPLE: Get email domain from an email address (after '@' and before '.') */
+SELECT		[cust_email]
+			    ,SUBSTRING([cust_email], CHARINDEX('@', [cust_email])+1, CHARINDEX('.',[cust_email]) - CHARINDEX('@', [cust_email]) + Len('.')-2)
+from		[dbo].[Customers]
