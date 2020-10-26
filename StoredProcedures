@@ -1,0 +1,42 @@
+/*********************************************************************************************************	
+Stored procedures are essentially scripts that have been saved so you can run them over and over again.
+*********************************************************************************************************/
+
+/* SYNTAX */
+CREATE PROCEDURE procedure_name
+AS
+sql_statement
+GO;
+
+EXEC procedure_name;
+
+/* EXAMPLE: Get the first name from the full name column (which we created before) */ 
+
+CREATE PROCEDURE get_first_name
+AS
+SELECT	SUBSTRING([cust_contact],0, CHARINDEX(' ',[cust_contact])) [First Name] 
+FROM	[dbo].[Customers]
+GO;
+
+EXEC get_first_name;
+
+/**************************************************************
+	PROCEDURE WITH ONE PARAMETER EXAMPLE
+**************************************************************/
+
+select		*
+from		[dbo].[Products]
+where		[prod_price] <= 5.99
+
+CREATE PROCEDURE max_price
+
+@price decimal(19,2)
+
+AS
+
+SELECT	 *
+FROM	 [dbo].[Products]
+WHERE	 [prod_price] <= @price
+GO
+
+EXEC max_price @price = 8.99
