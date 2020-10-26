@@ -1,0 +1,145 @@
+/*********************************************************************************************	
+Pivots/Unpivots allow you to convert rows to columns and columns to rows
+
+
+ADS PROJECT SPOTLIGHT 
+
+Project Name: M&G
+ADS Member(s): Jenny Park
+Background: We were asked to recreate a Vendor Balance Summary using SAP data from our database.
+The headers consisted of the  different Document Types from the Accounting Invoice table in SAP. 
+In order to get the data in this format, we essentially had to transform the rows in our table
+into columns, which involved the use of pivots. The first step was to get the header names for 
+this new transformed table (in this case, it was the accounting document types) and then pivoting 
+on those values to get a transformed table. 
+**********************************************************************************************/
+
+/* SYNTAX */
+
+SELECT  first_column AS <first_column_alias>,
+	    [pivot_value1], [pivot_value2], ... [pivot_value_n]
+FROM	(<source_table>) AS <source_table_alias>
+PIVOT 
+		(
+		 aggregate_function(<aggregate_column>)
+		 FOR <pivot_column>
+		 IN ([pivot_value1], [pivot_value2], ... [pivot_value_n])
+		) AS <pivot_table_alias>;
+	
+/* EXAMPLE: Create a column for every product id in the prod_id column */
+select		*
+from	(select		rtrim(ltrim(prod_id)) prod_id, sum(quantity) [quantity]
+			 from		[dbo].[OrderItems]
+			 group by	rtrim(ltrim(prod_id))) as t -- running this part first will allow you to get all of the distinct prod_ids
+pivot		
+(
+	sum([quantity])
+	FOR prod_id in ([BNBG01]    -- list of distinct prod_ids that was created by running the first part of the query 
+				   ,[BNBG02]    
+				   ,[BNBG03]    
+				   ,[BR01]      
+				   ,[BR02]    
+				   ,[BR03]      
+				   ,[RGAN01]
+				   )
+) as pivot_table;
+
+
+/**************************************************************
+	DYNAMIC METHOD
+**************************************************************/
+
+/* EXAMPLE: Create a column for every product id in the prod_id column
+Running this dynamically allows you to skip the step of getting distinct prod_ids first. */
+
+DECLARE @cols AS NVARCHAR(MAX),
+	    @query  AS NVARCHAR(MAX)
+
+	-- select the category names
+	select @cols = STUFF((SELECT distinct ',' + QUOTENAME(rtrim(ltrim(prod_id))) 
+						from [dbo].[OrderItems]
+				FOR XML PATH(''), TYPE
+				).value('.', 'NVARCHAR(MAX)') 
+			,1,1,'')
+			;
+
+	set @query = '	select		*
+					from	(select		rtrim(ltrim(prod_id)) prod_id, sum(quantity) [quantity]
+							from		[dbo].[OrderItems]
+							group by	rtrim(ltrim(prod_id))) as t
+					pivot		
+					(
+						sum([quantity])
+									for prod_id in (' + @cols + ')
+								) p '
+	execute(@query)
+
+
+/*********************************************************************************************	
+										UNPIVOT
+**********************************************************************************************/
+
+-- Using CTE and Unpivot to turn columns back into rows:
+
+-- 1) Storing the pivoted table as a CTE
+with cte as
+(
+select		*
+--into		[dbo].[OrderItems_Pivoted]
+from		(select		rtrim(ltrim(prod_id)) prod_id, sum(quantity) [quantity]
+			 from		[dbo].[OrderItems]
+			 group by	rtrim(ltrim(prod_id))) as t -- get list of column names to pivot on
+pivot		
+(
+	sum([quantity])
+	FOR prod_id in ([BNBG01]
+				   ,[BNBG02]    
+				   ,[BNBG03]    
+				   ,[BR01]      
+				   ,[BR02]    
+				   ,[BR03]      
+				   ,[RGAN01]
+				   )
+) as pivot_table
+)
+
+--2) Unpivot the pivoted table (CTE)
+SELECT	prod_id, quantity
+FROM	cte
+UNPIVOT
+(
+	[quantity]
+	FOR prod_id in ([BNBG01]    -- this is generated from the query above 
+				   ,[BNBG02]    
+				   ,[BNBG03]    
+				   ,[BR01]      
+				   ,[BR02]    
+				   ,[BR03]      
+				   ,[RGAN01]
+				  	)) as unpivot_table
+
+
+/**************************************************************
+	DYNAMIC METHOD
+**************************************************************/
+
+DECLARE @colsUnpivot AS NVARCHAR(MAX),
+		@query  AS NVARCHAR(MAX)
+
+select @colsUnpivot 
+  = stuff((select ','+quotename(C.name)
+		   FROM sys.columns c
+		   WHERE c.object_id = OBJECT_ID('[dbo].[OrderItems_Pivoted]') 
+		   for xml path('')), 1, 1, '')
+
+set @query 
+  = 'select prod_id, quantity
+	 from [dbo].[OrderItems_Pivoted]
+	 unpivot
+	 (
+		[quantity]
+		for prod_id in ('+ @colsunpivot +')
+	 ) u'
+
+exec sp_executesql @query;
+
