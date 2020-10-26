@@ -1,0 +1,33 @@
+/*********************************************************************************************************	
+CTEs (Common Table Expressions) allow you to define a temporary named result set that available temporarily 
+in the execution scope of a statement such as SELECT, INSERT, UPDATE, DELETE, or MERGE. A CTE is similar to 
+a derived table that is not stored as an object and only lasts for the duration of the query. It can be 
+self-referencing an be referenced multiple times in the same query.
+
+Source: https://www.sqlservertutorial.net/sql-server-basics/sql-server-cte/
+*********************************************************************************************************/
+
+/* SYNTAX */
+
+WITH	expression_name [(column_name [,...])]
+AS
+		   (CTE_definition)
+			
+SQL_statement;
+
+
+/* EXAMPLE: Find the total order amount for orders that contained an 18-inch teddy bear (prod_id = BR03) */
+
+with cte as 
+(
+select		order_num
+from	  	[dbo].[OrderItems]
+where		  rtrim(ltrim(prod_id)) = 'BR03'
+) -- separate out the orders that contain product BR03 in the order
+
+select		a.order_num, sum(quantity * item_price) [Total Amount]
+from		  [dbo].[OrderItems]	a
+join	  	cte					b
+on		  	a.order_num = b.order_num
+group by	a.order_num
+;
