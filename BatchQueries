@@ -1,0 +1,22 @@
+/*********************************************************************************************************	
+This allows you to write multiple queries in batch. It is esepcially helpful when you have to run the same
+query for different values within a table. 
+*********************************************************************************************************/
+
+/* EXAMPLE: Select all from all of the tables with the schema 'dbo' */	
+
+SELECT	'SELECT * FROM [' +TABLE_SCHEMA + '].[' + TABLE_NAME + ']'
+FROM	information_schema.tables
+where	TABLE_SCHEMA = 'dbo'
+and		TABLE_NAME in ('Customers'
+					  ,'OrderItems'
+					  ,'Orders'
+					  ,'Products'
+					  ,'Vendors')
+/*
+SELECT * FROM [dbo].[Customers]
+SELECT * FROM [dbo].[OrderItems]
+SELECT * FROM [dbo].[Orders]
+SELECT * FROM [dbo].[Products]
+SELECT * FROM [dbo].[Vendors]
+*/
